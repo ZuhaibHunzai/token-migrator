@@ -1,12 +1,17 @@
-import { useAccount, useDisconnect, usePublicClient } from "wagmi";
+import {
+  useAccount,
+  useDisconnect,
+  usePublicClient,
+  useWalletClient,
+} from "wagmi";
 import bg from "../assets/bg.jpg";
 import { Button } from "../components/button";
 import { useEffect, useState } from "react";
 import SupportedWallets from "../components/supportedWallets";
-import { MIGRATOR_ADDRESS, ERC20_ADDRESS } from "../assets/addresses";
+import { MIGRATOR_ADDRESS } from "../assets/addresses";
 import MIGRATOR_ABI from "../assets/migratorAbi.json";
-// import ERC20_ABI from "../assets/erc20Abi.json";
-import { formatEther } from "viem";
+import ERC20_ABI from "../assets/erc20Abi.json";
+import { formatEther, parseEther } from "viem";
 
 function Homepage() {
   const [isConnectModal, setIsConnectModal] = useState(false);
@@ -14,9 +19,10 @@ function Homepage() {
   const [destination, setDestination] = useState(null);
   const [migrationRate, setMigrationRate] = useState(0);
   const [source, setSource] = useState(null);
-
+  const [amount, setAmount] = useState(0);
   const { isConnected, address } = useAccount();
   const publicClient = usePublicClient();
+  const { data: walletClient } = useWalletClient();
   const { disconnect } = useDisconnect();
 
   const shortenAddress = address
@@ -91,7 +97,47 @@ function Homepage() {
     getSource();
   }, [address, publicClient]);
 
-  console.log(source, destination, migrationRate, decimalPrecision, "Source");
+  const handleMigrate = async () => {
+    try {
+      if (source && amount > 0) {
+        const allowance = await publicClient.readContract({
+          abi: ERC20_ABI,
+          address: source,
+          functionName: "allowance",
+          args: [address, MIGRATOR_ADDRESS],
+        });
+
+        if (allowance < amount) {
+          const approveHash = await walletClient.writeContract({
+            abi: ERC20_ABI,
+            address: source,
+            functionName: "approve",
+            args: [MIGRATOR_ADDRESS, parseEther(amount.toString())],
+          });
+
+          await publicClient.waitForTransactionReceipt({
+            approveHash,
+            confirmations: 2,
+          });
+        }
+
+        const hash = await walletClient.writeContract({
+          abi: MIGRATOR_ABI,
+          address: MIGRATOR_ADDRESS,
+          functionName: "migrate",
+          args: [parseEther(amount.toString())],
+        });
+        await publicClient.waitForTransactionReceipt({
+          hash,
+          confirmations: 1,
+        });
+
+        return;
+      }
+    } catch (err) {
+      console.log("Error migrating token(s)", err);
+    }
+  };
 
   return (
     <>
@@ -100,7 +146,7 @@ function Homepage() {
         onClose={() => setIsConnectModal(false)}
       />
       <div
-        className="bg-cover bg-center h-[100vh] w-full"
+        className="bg-cover bg-center h-[100vh] w-full flex justify-around items-center flex-col"
         style={{ backgroundImage: `url(${bg})` }}
       >
         <div className="w-full h-full">
@@ -115,17 +161,25 @@ function Homepage() {
               <input
                 type="number"
                 step="any"
-                placeholder="enter amount "
+                placeholder="enter amount"
+                onChange={(e) => {
+                  setAmount(e.target.value);
+                }}
                 className="mb-2 h-[35px] rounded bg-transparent text-white pl-2 outline-none border border-white"
               />
-              <Button>Convert</Button>
+              <Button onClick={handleMigrate}>Migrate</Button>
             </div>
             <div className="flex flex-col">
               <h3 className="text-white text-center mb-2">Connect Wallet</h3>
               <Button>Connect</Button>
             </div>
           </div>
-          {/* <p>{(decimalPrecision, destination, migrationRate, source)}</p> */}
+        </div>
+        <div className="w-full h-[100px] flex justify-center items-center flex-col">
+          <p className="text-white">{decimalPrecision}</p>
+          <p className="text-white">{destination}</p>
+          <p className="text-white">{migrationRate}</p>
+          <p className="text-white">{source}</p>
         </div>
       </div>
     </>
