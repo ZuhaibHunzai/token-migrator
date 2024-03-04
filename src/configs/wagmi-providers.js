@@ -17,6 +17,7 @@ export const config = createConfig({
   publicClient,
   connectors: [
     new MetaMaskConnector({ chains }),
+
     new WalletConnectConnector({
       chains,
       options: {

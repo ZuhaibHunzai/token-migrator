@@ -146,40 +146,60 @@ function Homepage() {
         onClose={() => setIsConnectModal(false)}
       />
       <div
-        className="bg-cover bg-center h-[100vh] w-full flex justify-around items-center flex-col"
+        className="bg-cover bg-center h-screen w-full flex justify-center items-center  flex-col"
         style={{ backgroundImage: `url(${bg})` }}
       >
-        <div className="w-full h-full">
-          <div className="flex justify-around items-center w-full h-full border-red-100">
-            <div className="flex flex-col">
-              <h3 className="text-white text-center mb-2">Connect Wallet</h3>
-              <Button onClick={onConnect}>
-                {shortenAddress || "Connect Wallet"}
-              </Button>
-            </div>
-            <div className="flex flex-col">
-              <input
-                type="number"
-                step="any"
-                placeholder="enter amount"
-                onChange={(e) => {
-                  setAmount(e.target.value);
-                }}
-                className="mb-2 h-[35px] rounded bg-transparent text-white pl-2 outline-none border border-white"
-              />
-              <Button onClick={handleMigrate}>Migrate</Button>
-            </div>
-            <div className="flex flex-col">
-              <h3 className="text-white text-center mb-2">Connect Wallet</h3>
-              <Button>Connect</Button>
-            </div>
+        <div className="bg-white rounded-lg shadow-md pb-4">
+          <h1 className="bg-blue-600 text-center py-3 text-white text-2xl font-bold rounded-tl rounded-tr">
+            Migrator
+          </h1>
+
+          <h3 className="text-2xl text-center text-gray-800 mt-4">
+            {shortenAddress || "Wallet not connected"}
+          </h3>
+          <div className="mt-6 text-center text-gray-600 px-8">
+            <p>
+              <span className="font-bold">Decimal Precision: </span>
+              {decimalPrecision}
+            </p>
+            <p>
+              <span className="font-bold">Destination: </span> <br />
+              {destination}
+            </p>
+            <p>
+              <span className="font-bold">Migration Rate: </span>
+              {migrationRate}
+            </p>
+            <p>
+              <span className="font-bold">Source: </span> <br />
+              {source}
+            </p>
           </div>
-        </div>
-        <div className="w-full h-[100px] flex justify-center items-center flex-col">
-          <p className="text-white">{decimalPrecision}</p>
-          <p className="text-white">{destination}</p>
-          <p className="text-white">{migrationRate}</p>
-          <p className="text-white">{source}</p>
+          <div className="mb-6 px-8">
+            <input
+              type="number"
+              step="any"
+              placeholder="Enter amount"
+              onChange={(e) => {
+                setAmount(e.target.value);
+              }}
+              className="w-full m-auto h-10 rounded bg-gray-200 text-gray-800 outline-none focus:ring focus:ring-blue-400 mt-2 pl-2"
+            />
+          </div>
+          <div className="w-full px-8">
+            <Button onClick={onConnect} className="w-full">
+              {shortenAddress ? "Disconnect" : "Connect Wallet"}
+            </Button>
+          </div>
+          <div className="mt-2 px-8">
+            <Button
+              onClick={handleMigrate}
+              className="w-full mt-6"
+              disabled={!shortenAddress}
+            >
+              Migrate
+            </Button>
+          </div>
         </div>
       </div>
     </>
